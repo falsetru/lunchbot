@@ -63,10 +63,6 @@ class LunchOrderBot(object):
         self.skype.FriendlyName = "Skype Bot"
         self.skype.Attach()
 
-    def AttachmentStatus(self, status):
-        if status == Skype4Py.apiAttachAvailable:
-            self.skype.Attach()
-
     def MessageStatus(self, msg, status):
         if msg.ChatName not in self.channels:
             if msg.Body not in ('!summon', '!whereami'):
@@ -134,12 +130,6 @@ class LunchOrderBot(object):
     def _handle_clearall(self, msg):
         orders.clear()
         self.send_text(msg, u'EMPTY')
-    #def _handle_confirm(self, msg):
-    #    o = orders.get(msg.Sender.Handle)
-    #    if o:
-    #        self.send_text(msg, o.summary())
-    #    else:
-    #        self.send_text(msg, u'읭? No order for you.')
     def _handle_sum(self, msg):
         if not orders:
             self.send_text(msg, u'읭? No order at all.')
@@ -166,7 +156,6 @@ class LunchOrderBot(object):
     def _handle_ping(self, msg):
         self.send_text(msg, u'pong')
     def _handle_summon(self, msg):
-        print msg.ChatName
         self.channels.add(msg.ChatName)
     def _handle_dismiss(self, msg):
         self.channels.remove(msg.ChatName)
