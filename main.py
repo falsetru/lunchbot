@@ -99,7 +99,7 @@ class LunchOrderBot(object):
             o.add(*name_price, qty=qty)
         if any_order:
             self.send_text(msg, o.summary())
-        return orders
+        return any_order
 
     def handle_misc(self, msg):
         matched = self.cmd_pattern.match(msg.Body.strip())
