@@ -51,9 +51,10 @@ class Order(object):
 orders = collections.defaultdict(Order)
 
 class LunchOrderBot(object):
-    cmd_pattern = re.compile(r'^!([a-z_\d]+)$', flags=re.IGNORECASE)
-    qty_pattern = re.compile(r'^(?P<name>.*)\s*[x*]\s*(?P<qty>\d+)\s*$',
-                             flags=re.IGNORECASE)
+    cmd_pattern = re.compile(ur'^!([a-z_\d]+)$', flags=re.IGNORECASE)
+    qty_pattern = re.compile(ur'^(?P<name>.*)\s*[x*]\s*(?P<qty>\d+)\s*$',
+                             flags=re.IGNORECASE | re.UNICODE)
+    sep_pattern = re.compile(ur'[.,;+/]|\band\b', flags=re.IGNORECASE | re.UNICODE)
 
     def __init__(self, sqlite_path, channels):
         self.sqlite_path = sqlite_path
@@ -74,32 +75,31 @@ class LunchOrderBot(object):
             elif msg.Id in self.seen:
                 return
 
-            matched = self.qty_pattern.match(msg.Body)
-            if matched:
-                name, qty = matched.group('name'), int(matched.group('qty'))
-            else:
-                name, qty = msg.Body, 1
-
-            name_price = menu.get(name.replace(u' ', u''))
-            if name_price:
-                self.handle_order(msg, name_price, qty)
-            else:
-                self.handle_misc(msg)
+            self.handle_order(msg) or self.handle_misc(msg)
             self.seen.add(msg.Id)
 
     def send_text(self, msg, text):
         sent = msg.Chat.SendMessage(text)
         self.seen.add(sent.Id)
 
-    def handle_order(self, msg, name_price, qty):
-        name, price = name_price
-        o = orders[msg.Sender.Handle]
-        o.add(*name_price, qty=qty)
-        text = (
-            u'주문: {0.Sender.FullName} ({0.Sender.Handle}) + {1} ({2:,}) = {3}'
-            .format(msg, name, price, o.summary())
-        )
-        self.send_text(msg, text)
+    def handle_order(self, msg):
+        any_order = False
+        for item in self.sep_pattern.split(msg.Body):
+            matched = self.qty_pattern.match(item.strip())
+            if matched:
+                name, qty = matched.group('name'), int(matched.group('qty'))
+            else:
+                name, qty = item, 1
+            name_price = menu.get(name.replace(u' ', u''))
+            if not name_price:
+                continue
+            any_order = True
+            name, price = name_price
+            o = orders[msg.Sender.Handle]
+            o.add(*name_price, qty=qty)
+        if any_order:
+            self.send_text(msg, o.summary())
+        return orders
 
     def handle_misc(self, msg):
         matched = self.cmd_pattern.match(msg.Body.strip())
