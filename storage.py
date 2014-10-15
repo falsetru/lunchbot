@@ -2,7 +2,7 @@
 # coding: utf-8
 
 import contextlib
-
+import json
 import sqlite3
 
 
@@ -22,23 +22,26 @@ def setup_db(path):
             price INT
         )''')
         db.execute(u'''
-        CREATE TABLE IF NOT EXISTS message (
-            id INT PRIMARY KEY,
+        CREATE TABLE IF NOT EXISTS order_record (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
             handle TEXT,
             fullname TEXT,
-            body TEXT,
+            items TEXT,
+            total INT,
             timestamp NUM
-
         )''')
         db.commit()
         db.close()
     return lambda: conn(path)
 
 
-class Menu(object):
+class Connect(object):
 
     def __init__(self, connect):
         self.connect = connect
+
+
+class Menu(Connect):
 
     def populate(self, menus):
         with self.connect() as db:
@@ -68,12 +71,26 @@ class Menu(object):
 
 
 
-class Message(object):
-    def __init__(self, db):
-        self.connect = connect
+class OrderRecord(Connect):
+
+    def add(self, handle, fullname, items, total, timestamp):
+        with self.connect() as db:
+            db.execute(u'''
+            INSERT INTO order_record(handle, fullname, items, total, timestamp)
+            VALUES (?, ?, ?, ?, ?)
+            ''', [
+                handle,
+                fullname,
+                json.dumps(items, ensure_ascii=False),
+                total,
+                timestamp
+            ])
+            db.commit()
+
 
 db = setup_db('lunch.sqlite')
 menu = Menu(db)
+order_record = OrderRecord(db)
 
 if __name__ == '__main__':
     import importlib

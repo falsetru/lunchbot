@@ -7,7 +7,7 @@ import re
 
 import Skype4Py
 
-from storage import menu
+from storage import menu, order_record
 try:
     import settings
 except ImportError:
@@ -174,6 +174,13 @@ class LunchOrderBot(object):
                 for name, price in menu.getall()
             )
         )
+    def _handle_fin(self, msg):
+        timestamp = time.time()
+        for handle, o in orders.items():
+            order_record.add(
+                handle, handle2fullname[handle], dict(o.menus), o.total, timestamp
+            )
+        self.send_text(msg, u'주문 들어갑니다.')
 
     def _handle_ping(self, msg):
         self.send_text(msg, u'pong')
