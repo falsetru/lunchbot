@@ -39,6 +39,11 @@ class Order(object):
     def clear(self):
         self.menus = collections.Counter()
         self.total = 0
+    def copy(self):
+        c = Order()
+        c.menus = self.menus.copy()
+        c.total = self.total
+        return c
     def summary(self):
         return u'{} = {:,}'.format(
             u' + '.join(
@@ -59,6 +64,7 @@ class LunchOrderBot(object):
     def __init__(self, sqlite_path, channels):
         self.sqlite_path = sqlite_path
         self.channels = set(channels)
+        self.last_orderer = None
         self.seen = CappedSet(maxlen=1024)
         self.skype = Skype4Py.Skype(Events=self)
         self.skype.FriendlyName = "Skype Bot"
@@ -99,7 +105,14 @@ class LunchOrderBot(object):
             o.add(*name_price, qty=qty)
         if any_order:
             self.send_text(msg, o.summary())
+            self.last_orderer = msg.FromHandle
         return any_order
+
+    def _handle_metoo(self, msg):
+        if self.last_orderer not in orders:
+            return
+        o = orders[msg.FromHandle] = orders[self.last_orderer].copy()
+        self.send_text(msg, o.summary())
 
     def handle_misc(self, msg):
         matched = self.cmd_pattern.match(msg.Body.strip())
