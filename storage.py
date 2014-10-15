@@ -75,10 +75,11 @@ class OrderRecord(Connect):
 
     def add(self, handle, fullname, items, total, timestamp):
         with self.connect() as db:
-            db.execute(u'''
-            INSERT INTO order_record(handle, fullname, items, total, timestamp)
-            VALUES (?, ?, ?, ?, ?)
-            ''', [
+            sql = u'''
+                INSERT INTO order_record(handle, fullname, items, total, timestamp)
+                VALUES (?, ?, ?, ?, ?)
+            '''
+            db.execute(sql, [
                 handle,
                 fullname,
                 json.dumps(items, ensure_ascii=False),
@@ -86,6 +87,15 @@ class OrderRecord(Connect):
                 timestamp
             ])
             db.commit()
+
+    def get_last_order(self, handle, offset):
+        with self.connect() as db:
+            sql = u'''
+                SELECT items FROM order_record WHERE handle = ?
+                ORDER BY id DESC LIMIT 1 OFFSET ?
+            '''
+            rows = list(db.execute(sql, [handle, offset]))
+            return rows[0][0] if rows else None
 
 
 db = setup_db('lunch.sqlite')

@@ -2,8 +2,9 @@
 # coding: utf-8
 
 import collections
-import time
+import json
 import re
+import time
 
 import Skype4Py
 
@@ -39,6 +40,12 @@ class Order(object):
     def clear(self):
         self.menus = collections.Counter()
         self.total = 0
+    def populate(self, menus):
+        self.menus = collections.Counter(menus)
+        self.total = sum(
+            menu.get(name)[1] * qty for name, qty in menus.items()
+        )
+        return self
     def copy(self):
         c = Order()
         c.menus = self.menus.copy()
@@ -56,7 +63,7 @@ class Order(object):
 orders = collections.defaultdict(Order)
 
 class LunchOrderBot(object):
-    cmd_pattern = re.compile(ur'^!([a-z_\d]+)$', flags=re.IGNORECASE)
+    cmd_pattern = re.compile(ur'^!([a-z_\d]+)\b', flags=re.IGNORECASE)
     qty_pattern = re.compile(ur'^(?P<name>.*)\s*[x*]\s*(?P<qty>\d+)\s*$',
                              flags=re.IGNORECASE | re.UNICODE)
     sep_pattern = re.compile(ur'[.,;+/]|\band\b', flags=re.IGNORECASE | re.UNICODE)
@@ -190,6 +197,17 @@ class LunchOrderBot(object):
         self.channels.remove(msg.ChatName)
     def _handle_whereami(self, msg):
         self.send_text(msg, msg.ChatName)
+    def _handle_salt(self, msg):
+        "Same as last time"
+        try:
+            offset = int(msg.Body.split()[1]) - 1
+        except (IndexError, ValueError):
+            offset = 0
+        o = order_record.get_last_order(msg.FromHandle, offset)
+        if not o:
+            self.send_text(msg, u'No order')
+        items = json.loads(o)
+        self.send_text(msg, orders[msg.FromHandle].populate(items).summary())
 
 
 if __name__ == "__main__":
