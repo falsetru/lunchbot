@@ -8,6 +8,10 @@ import re
 import Skype4Py
 
 from storage import menu
+try:
+    import settings
+except ImportError:
+    settings = object()
 
 
 class CappedSet(set):
@@ -65,7 +69,7 @@ class LunchOrderBot(object):
 
     def MessageStatus(self, msg, status):
         if msg.ChatName not in self.channels:
-            if msg.Body != '!summon':
+            if msg.Body not in ('!summon', '!whereami'):
                 return
         handle2fullname[msg.Sender.Handle] = msg.Sender.FullName
         if status in (Skype4Py.cmsReceived, Skype4Py.cmsSent, Skype4Py.cmsSending):
@@ -166,10 +170,15 @@ class LunchOrderBot(object):
         self.channels.add(msg.ChatName)
     def _handle_dismiss(self, msg):
         self.channels.remove(msg.ChatName)
+    def _handle_whereami(self, msg):
+        self.send_text(msg, msg.ChatName)
 
 
 if __name__ == "__main__":
-    bot = LunchOrderBot('lunch.sqlite', channels=['#ultra066/$chharry81;3510577c918b91e'])
+    bot = LunchOrderBot(
+        'lunch.sqlite',
+        channels=getattr(settings, 'channels', [])
+    )
     try:
         while True:
             time.sleep(1)
