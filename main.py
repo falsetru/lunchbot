@@ -51,8 +51,9 @@ class LunchOrderBot(object):
     qty_pattern = re.compile(r'^(?P<name>.*)\s*[x*]\s*(?P<qty>\d+)\s*$',
                              flags=re.IGNORECASE)
 
-    def __init__(self, sqlite_path):
+    def __init__(self, sqlite_path, channels):
         self.sqlite_path = sqlite_path
+        self.channels = set(channels)
         self.seen = CappedSet(maxlen=1024)
         self.skype = Skype4Py.Skype(Events=self)
         self.skype.FriendlyName = "Skype Bot"
@@ -63,7 +64,9 @@ class LunchOrderBot(object):
             self.skype.Attach()
 
     def MessageStatus(self, msg, status):
-        if msg.ChatName != '#ultra066/$chharry81;3510577c918b91e': return
+        if msg.ChatName not in self.channels:
+            if msg.Body != '!summon':
+                return
         handle2fullname[msg.Sender.Handle] = msg.Sender.FullName
         if status in (Skype4Py.cmsReceived, Skype4Py.cmsSent, Skype4Py.cmsSending):
             if status == Skype4Py.cmsReceived:
@@ -158,10 +161,15 @@ class LunchOrderBot(object):
         self.send_text(msg, u'\n'.join(text))
     def _handle_ping(self, msg):
         self.send_text(msg, u'pong')
+    def _handle_summon(self, msg):
+        print msg.ChatName
+        self.channels.add(msg.ChatName)
+    def _handle_dismiss(self, msg):
+        self.channels.remove(msg.ChatName)
 
 
 if __name__ == "__main__":
-    bot = LunchOrderBot('lunch.sqlite')
+    bot = LunchOrderBot('lunch.sqlite', channels=['#ultra066/$chharry81;3510577c918b91e'])
     try:
         while True:
             time.sleep(1)
