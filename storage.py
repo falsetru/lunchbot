@@ -97,6 +97,14 @@ class OrderRecord(Connect):
             rows = list(db.execute(sql, [handle, offset]))
             return rows[0][0] if rows else None
 
+    def get_recent_orders(self, handle):
+        with self.connect() as db:
+            sql = u'''
+                SELECT items, total, timestamp FROM order_record WHERE handle = ?
+                ORDER BY id DESC LIMIT 20
+            '''
+            return list(db.execute(sql, [handle]))
+
 
 db = setup_db('lunch.sqlite')
 menu = Menu(db)

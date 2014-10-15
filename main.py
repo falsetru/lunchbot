@@ -2,6 +2,7 @@
 # coding: utf-8
 
 import collections
+import datetime
 import json
 import re
 import time
@@ -200,14 +201,28 @@ class LunchOrderBot(object):
     def _handle_salt(self, msg):
         "Same as last time"
         try:
-            offset = int(msg.Body.split()[1]) - 1
+            offset = int(msg.Body.split()[1])
         except (IndexError, ValueError):
             offset = 0
         o = order_record.get_last_order(msg.FromHandle, offset)
         if not o:
             self.send_text(msg, u'No order')
+            return
         items = json.loads(o)
         self.send_text(msg, orders[msg.FromHandle].populate(items).summary())
+    def _handle_recent_orders(self, msg):
+        records = order_record.get_recent_orders(msg.FromHandle)
+        def _():
+            for i, (items, total, timestamp) in enumerate(records):
+                dt = datetime.datetime.fromtimestamp(timestamp)
+                items = json.loads(items)
+                yield u'{}. {:%Y-%m-%d} : {} = {:,}'.format(
+                    i, dt,
+                    u' + '.join(u'{} x {}'.format(name, cnt) for name, cnt in items.items()),
+                    total
+                )
+        txt = u'\n'.join(reversed(list(_())))
+        self.send_text(msg, txt or u'No order')
 
 
 if __name__ == "__main__":
