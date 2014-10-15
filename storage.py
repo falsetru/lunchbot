@@ -60,6 +60,12 @@ class Menu(object):
             if len(rows) == 1:
                 return rows[0]
 
+    def getall(self):
+        with self.connect() as db:
+            return list(db.execute(
+                u'SELECT name, price FROM menu ORDER BY price DESC'
+            ))
+
 
 
 class Message(object):

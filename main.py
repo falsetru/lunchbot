@@ -166,6 +166,15 @@ class LunchOrderBot(object):
             ).center(80, u'-')
         )
         self.send_text(msg, u'\n'.join(text))
+    def _handle_menu(self, msg):
+        self.send_text(
+            msg,
+            u'\n'.join(
+                u'{} - {:,}'.format(name, price)
+                for name, price in menu.getall()
+            )
+        )
+
     def _handle_ping(self, msg):
         self.send_text(msg, u'pong')
     def _handle_summon(self, msg):
