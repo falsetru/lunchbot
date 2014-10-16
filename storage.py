@@ -2,7 +2,7 @@
 # coding: utf-8
 
 import contextlib
-
+import json
 import sqlite3
 
 
@@ -22,23 +22,26 @@ def setup_db(path):
             price INT
         )''')
         db.execute(u'''
-        CREATE TABLE IF NOT EXISTS message (
-            id INT PRIMARY KEY,
+        CREATE TABLE IF NOT EXISTS order_record (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
             handle TEXT,
             fullname TEXT,
-            body TEXT,
+            items TEXT,
+            total INT,
             timestamp NUM
-
         )''')
         db.commit()
         db.close()
     return lambda: conn(path)
 
 
-class Menu(object):
+class Connect(object):
 
     def __init__(self, connect):
         self.connect = connect
+
+
+class Menu(Connect):
 
     def populate(self, menus):
         with self.connect() as db:
@@ -60,14 +63,52 @@ class Menu(object):
             if len(rows) == 1:
                 return rows[0]
 
+    def getall(self):
+        with self.connect() as db:
+            return list(db.execute(
+                u'SELECT name, price FROM menu ORDER BY price DESC'
+            ))
 
 
-class Message(object):
-    def __init__(self, db):
-        self.connect = connect
+
+class OrderRecord(Connect):
+
+    def add(self, handle, fullname, items, total, timestamp):
+        with self.connect() as db:
+            sql = u'''
+                INSERT INTO order_record(handle, fullname, items, total, timestamp)
+                VALUES (?, ?, ?, ?, ?)
+            '''
+            db.execute(sql, [
+                handle,
+                fullname,
+                json.dumps(items, ensure_ascii=False),
+                total,
+                timestamp
+            ])
+            db.commit()
+
+    def get_last_order(self, handle, offset):
+        with self.connect() as db:
+            sql = u'''
+                SELECT items FROM order_record WHERE handle = ?
+                ORDER BY id DESC LIMIT 1 OFFSET ?
+            '''
+            rows = list(db.execute(sql, [handle, offset]))
+            return rows[0][0] if rows else None
+
+    def get_recent_orders(self, handle):
+        with self.connect() as db:
+            sql = u'''
+                SELECT items, total, timestamp FROM order_record WHERE handle = ?
+                ORDER BY id DESC LIMIT 20
+            '''
+            return list(db.execute(sql, [handle]))
+
 
 db = setup_db('lunch.sqlite')
 menu = Menu(db)
+order_record = OrderRecord(db)
 
 if __name__ == '__main__':
     import importlib
