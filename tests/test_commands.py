@@ -1,7 +1,7 @@
-import random
 import unittest
 from storage import menu
 from main import settings, LunchOrderBot
+
 
 class LunchbotTest(unittest.TestCase):
 

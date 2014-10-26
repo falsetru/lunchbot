@@ -14,6 +14,7 @@ def conn(path):
     finally:
         db.close()
 
+
 def setup_db(path):
     with conn(path) as db:
         db.execute(u'''
@@ -59,7 +60,8 @@ class Menu(Connect):
             if len(rows) == 1:
                 return rows[0]
             rows = list(db.execute(
-                u'SELECT name, price FROM menu WHERE name LIKE ?', [u'%{}%'.format(name)]))
+                u'SELECT name, price FROM menu WHERE name LIKE ?',
+                [u'%{}%'.format(name)]))
             if len(rows) == 1:
                 return rows[0]
 
@@ -83,7 +85,8 @@ class OrderRecord(Connect):
     def add(self, handle, fullname, items, total, timestamp):
         with self.connect() as db:
             sql = u'''
-                INSERT INTO order_record(handle, fullname, items, total, timestamp)
+                INSERT INTO order_record
+                (handle, fullname, items, total, timestamp)
                 VALUES (?, ?, ?, ?, ?)
             '''
             db.execute(sql, [
@@ -107,7 +110,8 @@ class OrderRecord(Connect):
     def get_recent_orders(self, handle):
         with self.connect() as db:
             sql = u'''
-                SELECT items, total, timestamp FROM order_record WHERE handle = ?
+                SELECT items, total, timestamp
+                FROM order_record WHERE handle = ?
                 ORDER BY id DESC LIMIT 20
             '''
             return list(db.execute(sql, [handle]))
@@ -121,5 +125,3 @@ if __name__ == '__main__':
     import importlib
     hsd = importlib.import_module('hsd')
     menu.populate(hsd.get_menus())
-    #print u'{} {}'.format(*menu.get(u'고기고기반찬'))
-    #print u'{} {}'.format(*menu.get(u'참치야채'))

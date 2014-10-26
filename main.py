@@ -17,10 +17,12 @@ except ImportError:
 
 
 class CappedSet(set):
+
     def __init__(self, maxlen):
         super(CappedSet, self).__init__()
         self.maxlen = maxlen
         self.q = collections.deque(maxlen=maxlen)
+
     def add(self, x):
         if x in self:
             return
@@ -32,26 +34,33 @@ class CappedSet(set):
 
 handle2fullname = {}
 
+
 class Order(object):
+
     def __init__(self):
         self.clear()
+
     def add(self, name, price, qty=1):
         self.menus[name] += qty
         self.total += price * qty
+
     def clear(self):
         self.menus = collections.Counter()
         self.total = 0
+
     def populate(self, menus):
         self.menus = collections.Counter(menus)
         self.total = sum(
             menu.get(name)[1] * qty for name, qty in menus.items()
         )
         return self
+
     def copy(self):
         c = Order()
         c.menus = self.menus.copy()
         c.total = self.total
         return c
+
     def summary(self):
         return u'{} = {:,}'.format(
             u' + '.join(
@@ -63,11 +72,13 @@ class Order(object):
 
 orders = collections.defaultdict(Order)
 
+
 class LunchOrderBot(object):
     cmd_pattern = re.compile(ur'^!([a-z_\d]+)\b', flags=re.IGNORECASE)
     qty_pattern = re.compile(ur'^(?P<name>.*)\s*[x*]\s*(?P<qty>\d+)\s*$',
                              flags=re.IGNORECASE | re.UNICODE)
-    sep_pattern = re.compile(ur'[.,;+/]|\band\b', flags=re.IGNORECASE | re.UNICODE)
+    sep_pattern = re.compile(ur'[.,;+/]|\band\b',
+                             flags=re.IGNORECASE | re.UNICODE)
 
     def __init__(self, sqlite_path, channels):
         self.sqlite_path = sqlite_path
@@ -83,7 +94,9 @@ class LunchOrderBot(object):
             if msg.Body not in ('!summon', '!whereami'):
                 return
         handle2fullname[msg.Sender.Handle] = msg.Sender.FullName
-        if status in (Skype4Py.cmsReceived, Skype4Py.cmsSent, Skype4Py.cmsSending):
+        if status in (Skype4Py.cmsReceived,
+                      Skype4Py.cmsSent,
+                      Skype4Py.cmsSending):
             if status == Skype4Py.cmsReceived:
                 msg.MarkAsSeen()
             elif msg.Id in self.seen:
@@ -147,10 +160,14 @@ class LunchOrderBot(object):
 
     def _handle_clear(self, msg):
         orders.pop(msg.Sender.Handle, None)
-        self.send_text(msg, u'{0.FullName} ({0.Handle}): OUT'.format(msg.Sender))
+        self.send_text(msg, u'{0.FullName} ({0.Handle}): OUT'.format(
+            msg.Sender
+        ))
+
     def _handle_clearall(self, msg):
         orders.clear()
         self.send_text(msg, u'EMPTY')
+
     def _handle_sum(self, msg):
         if not orders:
             self.send_text(msg, u'읭? No order at all.')
@@ -158,7 +175,8 @@ class LunchOrderBot(object):
         text = []
         text.append(u' Menu '.center(80, u'-'))
         cnt = collections.Counter()
-        for o in orders.values(): cnt += o.menus
+        for o in orders.values():
+            cnt += o.menus
         for name, c in cnt.most_common():
             text.append(u'{} x {}'.format(name, c))
         text.append(u' Show me the money '.center(80, u'-'))
@@ -174,6 +192,7 @@ class LunchOrderBot(object):
             ).center(80, u'-')
         )
         self.send_text(msg, u'\n'.join(text))
+
     def _handle_menu(self, msg):
         self.send_text(
             msg,
@@ -182,22 +201,28 @@ class LunchOrderBot(object):
                 for name, price in menu.getall()
             )
         )
+
     def _handle_fin(self, msg):
         timestamp = time.time()
         for handle, o in orders.items():
             order_record.add(
-                handle, handle2fullname[handle], dict(o.menus), o.total, timestamp
+                handle, handle2fullname[handle], dict(o.menus),
+                o.total, timestamp
             )
         self.send_text(msg, u'주문 들어갑니다.')
 
     def _handle_ping(self, msg):
         self.send_text(msg, u'pong')
+
     def _handle_summon(self, msg):
         self.channels.add(msg.ChatName)
+
     def _handle_dismiss(self, msg):
         self.channels.remove(msg.ChatName)
+
     def _handle_whereami(self, msg):
         self.send_text(msg, msg.ChatName)
+
     def _handle_salt(self, msg):
         "Same as last time"
         try:
@@ -210,19 +235,22 @@ class LunchOrderBot(object):
             return
         items = json.loads(o)
         self.send_text(msg, orders[msg.FromHandle].populate(items).summary())
+
     def _handle_recent_orders(self, msg):
-        records = order_record.get_recent_orders(msg.FromHandle)
         def _():
             for i, (items, total, timestamp) in enumerate(records):
                 dt = datetime.datetime.fromtimestamp(timestamp)
                 items = json.loads(items)
                 yield u'{}. {:%Y-%m-%d} : {} = {:,}'.format(
                     i, dt,
-                    u' + '.join(u'{} x {}'.format(name, cnt) for name, cnt in items.items()),
+                    u' + '.join(u'{} x {}'.format(name, cnt)
+                                for name, cnt in items.items()),
                     total
                 )
+        records = order_record.get_recent_orders(msg.FromHandle)
         txt = u'\n'.join(reversed(list(_())))
         self.send_text(msg, txt or u'No order')
+
     def _handle_random(self, msg):
         name = menu.getrandombyprice()[0]
         name_price = menu.get(name.replace(u' ', u''))
