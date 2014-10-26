@@ -224,7 +224,7 @@ class LunchOrderBot(object):
         txt = u'\n'.join(reversed(list(_())))
         self.send_text(msg, txt or u'No order')
     def _handle_random(self, msg):
-        name = menu.getbyprice()[0]
+        name = menu.getrandombyprice()[0]
         name_price = menu.get(name.replace(u' ', u''))
         o = orders[msg.Sender.Handle]
         o.add(*name_price)
