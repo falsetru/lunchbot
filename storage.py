@@ -69,6 +69,13 @@ class Menu(Connect):
                 u'SELECT name, price FROM menu ORDER BY price DESC'
             ))
 
+    def getbyprice(self, min=1000, max=5000):
+        with self.connect() as db:
+            rows = list(db.execute(
+                u'SELECT name FROM menu WHERE price between ? and ? \
+                ORDER BY RANDOM() LIMIT 1',   [min, max]
+                ))
+            return rows[0]
 
 
 class OrderRecord(Connect):
