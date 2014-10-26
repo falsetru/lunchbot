@@ -17,9 +17,6 @@ except ImportError:
     settings = object()
 
 
-handle2fullname = {}
-
-
 class Order(object):
 
     def __init__(self):
@@ -55,9 +52,6 @@ class Order(object):
             self.total
         )
 
-orders = collections.defaultdict(Order)
-
-
 class LunchOrderBot(object):
     cmd_pattern = re.compile(ur'^!([a-z_\d]+)\b', flags=re.IGNORECASE)
     qty_pattern = re.compile(ur'^(?P<name>.*)\s*[x*]\s*(?P<qty>\d+)\s*$',
@@ -68,17 +62,18 @@ class LunchOrderBot(object):
     def __init__(self, sqlite_path, channels):
         self.sqlite_path = sqlite_path
         self.channels = set(channels)
+        self.handle2fullname = {}
         self.last_orderer = None
         self.seen = CappedSet(maxlen=1024)
+        self.orders = collections.defaultdict(Order)
         self.skype = Skype4Py.Skype(Events=self)
-        self.skype.FriendlyName = "Skype Bot"
         self.skype.Attach()
 
     def MessageStatus(self, msg, status):
         if msg.ChatName not in self.channels:
             if msg.Body not in ('!summon', '!whereami'):
                 return
-        handle2fullname[msg.Sender.Handle] = msg.Sender.FullName
+        self.handle2fullname[msg.Sender.Handle] = msg.Sender.FullName
         if status in (Skype4Py.cmsReceived,
                       Skype4Py.cmsSent,
                       Skype4Py.cmsSending):
@@ -107,7 +102,7 @@ class LunchOrderBot(object):
                 continue
             any_order = True
             name, price = name_price
-            o = orders[msg.Sender.Handle]
+            o = self.orders[msg.Sender.Handle]
             o.add(*name_price, qty=qty)
         if any_order:
             self.send_text(msg, o.summary())
@@ -115,9 +110,9 @@ class LunchOrderBot(object):
         return any_order
 
     def _handle_metoo(self, msg):
-        if self.last_orderer not in orders:
+        if self.last_orderer not in self.orders:
             return
-        o = orders[msg.FromHandle] = orders[self.last_orderer].copy()
+        o = self.orders[msg.FromHandle] = self.orders[self.last_orderer].copy()
         self.send_text(msg, o.summary())
 
     def handle_misc(self, msg):
@@ -144,36 +139,36 @@ class LunchOrderBot(object):
         )
 
     def _handle_clear(self, msg):
-        orders.pop(msg.Sender.Handle, None)
+        self.orders.pop(msg.Sender.Handle, None)
         self.send_text(msg, u'{0.FullName} ({0.Handle}): OUT'.format(
             msg.Sender
         ))
 
     def _handle_clearall(self, msg):
-        orders.clear()
+        self.orders.clear()
         self.send_text(msg, u'EMPTY')
 
     def _handle_sum(self, msg):
-        if not orders:
+        if not self.orders:
             self.send_text(msg, u'읭? No order at all.')
             return
         text = []
         text.append(u' Menu '.center(80, u'-'))
         cnt = collections.Counter()
-        for o in orders.values():
+        for o in self.orders.values():
             cnt += o.menus
         for name, c in cnt.most_common():
             text.append(u'{} x {}'.format(name, c))
         text.append(u' Show me the money '.center(80, u'-'))
-        for handle, o in orders.items():
+        for handle, o in self.orders.items():
             text.append(u'{} ({}): {}'.format(
-                handle2fullname[handle],
+                self.handle2fullname[handle],
                 handle,
                 o.summary()
             ))
         text.append(
             u' Total: {:,} '.format(
-                sum(o.total for o in orders.values())
+                sum(o.total for o in self.orders.values())
             ).center(80, u'-')
         )
         self.send_text(msg, u'\n'.join(text))
@@ -189,9 +184,9 @@ class LunchOrderBot(object):
 
     def _handle_fin(self, msg):
         timestamp = time.time()
-        for handle, o in orders.items():
+        for handle, o in self.orders.items():
             order_record.add(
-                handle, handle2fullname[handle], dict(o.menus),
+                handle, self.handle2fullname[handle], dict(o.menus),
                 o.total, timestamp
             )
         self.send_text(msg, u'주문 들어갑니다.')
@@ -219,7 +214,7 @@ class LunchOrderBot(object):
             self.send_text(msg, u'No order')
             return
         items = json.loads(o)
-        self.send_text(msg, orders[msg.FromHandle].populate(items).summary())
+        self.send_text(msg, self.orders[msg.FromHandle].populate(items).summary())
 
     def _handle_recent_orders(self, msg):
         def _():
@@ -239,7 +234,7 @@ class LunchOrderBot(object):
     def _handle_random(self, msg):
         name = menu.getrandombyprice()[0]
         name_price = menu.get(name.replace(u' ', u''))
-        o = orders[msg.Sender.Handle]
+        o = self.orders[msg.Sender.Handle]
         o.add(*name_price)
         self.send_text(msg, o.summary())
         self.last_orderer = msg.FromHandle
