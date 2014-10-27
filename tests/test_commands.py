@@ -8,29 +8,46 @@ from main import Command
 def cmd(request):
     ret = Command()
     ret.send_text = mock.Mock()
+    ret.subscribe = mock.Mock()
+    ret.unsubscribe = mock.Mock()
     ret.channels = {'#interesting_channel'}
     return ret
 
 
-@pytest.fixture
-def msg():
-    return mock.Mock()
+def gen_msg(msg, chatname='#current_channel'):
+    ret = mock.Mock()
+    ret.configure_mock(Body=msg, ChatName=chatname)
+    return ret
 
 
-def test_ping(cmd, msg):
-    cmd._handle_ping(msg)
-    cmd.send_text.assert_called_with(msg, 'pong')
+def in_(cmd, msg_body):
+    msg = gen_msg(msg_body)
+    cmd.handle_misc(msg)
+    return msg
 
 
-# XXX
-def test_summon(cmd, msg):
-    msg.ChatName = '#current_channel'
-    cmd._handle_summon(msg)
-    assert cmd.channels == {'#interesting_channel', '#current_channel'}
+def out(cmd, want):
+    cmd.send_text.assert_called_with(mock.ANY, want)
 
 
-# XXX
-def test_dismiss(cmd, msg):
-    msg.ChatName = '#interesting_channel'
-    cmd._handle_dismiss(msg)
-    assert cmd.channels == set()
+# ----------------------------------------------------------------------
+
+
+def test_ping(cmd):
+    in_(cmd, '!ping')
+    out(cmd, 'pong')
+
+
+def test_whereami(cmd):
+    in_(cmd, '!whereami')
+    out(cmd, '#current_channel')
+
+
+def test_summon(cmd):
+    in_(cmd, '!summon')
+    cmd.subscribe.assert_called_with('#current_channel')
+
+
+def test_dismiss(cmd):
+    in_(cmd, '!dismiss')
+    cmd.unsubscribe.assert_called_with('#current_channel')

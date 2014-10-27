@@ -55,6 +55,12 @@ class Order(object):
 
 class Command(object):
 
+    cmd_pattern = re.compile(ur'^!([a-z_\d]+)\b', flags=re.IGNORECASE)
+    qty_pattern = re.compile(ur'^(?P<name>.*)\s*[x*]\s*(?P<qty>\d+)\s*$',
+                             flags=re.IGNORECASE | re.UNICODE)
+    sep_pattern = re.compile(ur'[.,;+/]|\band\b',
+                             flags=re.IGNORECASE | re.UNICODE)
+
     def handle_order(self, msg):
         any_order = False
         for item in self.sep_pattern.split(msg.Body):
@@ -161,10 +167,10 @@ class Command(object):
         self.send_text(msg, u'pong')
 
     def _handle_summon(self, msg):
-        self.channels.add(msg.ChatName)
+        self.subscribe(msg.ChatName)
 
     def _handle_dismiss(self, msg):
-        self.channels.remove(msg.ChatName)
+        self.unsubscribe(msg.ChatName)
 
     def _handle_whereami(self, msg):
         self.send_text(msg, msg.ChatName)
@@ -210,11 +216,6 @@ class Command(object):
 
 
 class LunchOrderBot(Command):
-    cmd_pattern = re.compile(ur'^!([a-z_\d]+)\b', flags=re.IGNORECASE)
-    qty_pattern = re.compile(ur'^(?P<name>.*)\s*[x*]\s*(?P<qty>\d+)\s*$',
-                             flags=re.IGNORECASE | re.UNICODE)
-    sep_pattern = re.compile(ur'[.,;+/]|\band\b',
-                             flags=re.IGNORECASE | re.UNICODE)
 
     def __init__(self, sqlite_path, channels):
         self.sqlite_path = sqlite_path
@@ -223,7 +224,6 @@ class LunchOrderBot(Command):
         self.last_orderer = None
         self.seen = CappedSet(maxlen=1024)
         self.orders = collections.defaultdict(Order)
-        self.attach()
         self.skype = Skype4Py.Skype(Events=self)
         self.skype.Attach()
 
@@ -246,6 +246,12 @@ class LunchOrderBot(Command):
     def send_text(self, msg, text):
         sent = msg.Chat.SendMessage(text)
         self.seen.add(sent.Id)
+
+    def subscribe(self, channel):
+        self.channels.add(channel)
+
+    def unsubscribe(self, channel):
+        self.channels.remove(channel)
 
 
 if __name__ == "__main__":
