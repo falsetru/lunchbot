@@ -1,29 +1,36 @@
+import mock
 import pytest
 
-from main import LunchOrderBot
+from main import Command
 
 
 @pytest.fixture
-def bot(monkeypatch):
-    monkeypatch.setattr(
-        LunchOrderBot,
-        'attach',
-        lambda self: None
-    )
-    monkeypatch.setattr(
-        LunchOrderBot,
-        'send_text',
-        lambda self, msg, text: setattr(bot, '_last_msg', text)
-    )
-    bot = LunchOrderBot(':memoery', [])
-    return bot
+def cmd(request):
+    ret = Command()
+    ret.send_text = mock.Mock()
+    ret.channels = {'#interesting_channel'}
+    return ret
 
 
 @pytest.fixture
 def msg():
-    return object()
+    return mock.Mock()
 
 
-def test_ping(bot, msg):
-    bot._handle_ping(msg)
-    assert bot._last_msg == 'pong'
+def test_ping(cmd, msg):
+    cmd._handle_ping(msg)
+    cmd.send_text.assert_called_with(msg, 'pong')
+
+
+# XXX
+def test_summon(cmd, msg):
+    msg.ChatName = '#current_channel'
+    cmd._handle_summon(msg)
+    assert cmd.channels == {'#interesting_channel', '#current_channel'}
+
+
+# XXX
+def test_dismiss(cmd, msg):
+    msg.ChatName = '#interesting_channel'
+    cmd._handle_dismiss(msg)
+    assert cmd.channels == set()

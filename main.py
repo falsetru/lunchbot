@@ -53,45 +53,7 @@ class Order(object):
         )
 
 
-class LunchOrderBot(object):
-    cmd_pattern = re.compile(ur'^!([a-z_\d]+)\b', flags=re.IGNORECASE)
-    qty_pattern = re.compile(ur'^(?P<name>.*)\s*[x*]\s*(?P<qty>\d+)\s*$',
-                             flags=re.IGNORECASE | re.UNICODE)
-    sep_pattern = re.compile(ur'[.,;+/]|\band\b',
-                             flags=re.IGNORECASE | re.UNICODE)
-
-    def __init__(self, sqlite_path, channels):
-        self.sqlite_path = sqlite_path
-        self.channels = set(channels)
-        self.handle2fullname = {}
-        self.last_orderer = None
-        self.seen = CappedSet(maxlen=1024)
-        self.orders = collections.defaultdict(Order)
-        self.attach()
-
-    def attach(self):
-        self.skype = Skype4Py.Skype(Events=self)
-        self.skype.Attach()
-
-    def MessageStatus(self, msg, status):
-        if msg.ChatName not in self.channels:
-            if msg.Body not in ('!summon', '!whereami'):
-                return
-        self.handle2fullname[msg.Sender.Handle] = msg.Sender.FullName
-        if status in (Skype4Py.cmsReceived,
-                      Skype4Py.cmsSent,
-                      Skype4Py.cmsSending):
-            if status == Skype4Py.cmsReceived:
-                msg.MarkAsSeen()
-            elif msg.Id in self.seen:
-                return
-
-            self.handle_order(msg) or self.handle_misc(msg)
-            self.seen.add(msg.Id)
-
-    def send_text(self, msg, text):
-        sent = msg.Chat.SendMessage(text)
-        self.seen.add(sent.Id)
+class Command(object):
 
     def handle_order(self, msg):
         any_order = False
@@ -245,6 +207,45 @@ class LunchOrderBot(object):
         o.add(*name_price)
         self.send_text(msg, o.summary())
         self.last_orderer = msg.FromHandle
+
+
+class LunchOrderBot(Command):
+    cmd_pattern = re.compile(ur'^!([a-z_\d]+)\b', flags=re.IGNORECASE)
+    qty_pattern = re.compile(ur'^(?P<name>.*)\s*[x*]\s*(?P<qty>\d+)\s*$',
+                             flags=re.IGNORECASE | re.UNICODE)
+    sep_pattern = re.compile(ur'[.,;+/]|\band\b',
+                             flags=re.IGNORECASE | re.UNICODE)
+
+    def __init__(self, sqlite_path, channels):
+        self.sqlite_path = sqlite_path
+        self.channels = set(channels)
+        self.handle2fullname = {}
+        self.last_orderer = None
+        self.seen = CappedSet(maxlen=1024)
+        self.orders = collections.defaultdict(Order)
+        self.attach()
+        self.skype = Skype4Py.Skype(Events=self)
+        self.skype.Attach()
+
+    def MessageStatus(self, msg, status):
+        if msg.ChatName not in self.channels:
+            if msg.Body not in ('!summon', '!whereami'):
+                return
+        self.handle2fullname[msg.Sender.Handle] = msg.Sender.FullName
+        if status in (Skype4Py.cmsReceived,
+                      Skype4Py.cmsSent,
+                      Skype4Py.cmsSending):
+            if status == Skype4Py.cmsReceived:
+                msg.MarkAsSeen()
+            elif msg.Id in self.seen:
+                return
+
+            self.handle_order(msg) or self.handle_misc(msg)
+            self.seen.add(msg.Id)
+
+    def send_text(self, msg, text):
+        sent = msg.Chat.SendMessage(text)
+        self.seen.add(sent.Id)
 
 
 if __name__ == "__main__":
