@@ -1,18 +1,29 @@
-import unittest
-from storage import menu
-from main import settings, LunchOrderBot
+import pytest
+
+from main import LunchOrderBot
 
 
-class LunchbotTest(unittest.TestCase):
+@pytest.fixture
+def bot(monkeypatch):
+    monkeypatch.setattr(
+        LunchOrderBot,
+        'attach',
+        lambda self: None
+    )
+    monkeypatch.setattr(
+        LunchOrderBot,
+        'send_text',
+        lambda self, msg, text: setattr(bot, '_last_msg', text)
+    )
+    bot = LunchOrderBot(':memoery', [])
+    return bot
 
-    def setUp(self):
-        self.bot = LunchOrderBot(
-            'lunch.sqlite',
-            channels=getattr(settings, 'channels', [])
-        )
 
-    def test_getrandom(self):
-        self.assertEqual(len(menu.getrandombyprice()), 1)
+@pytest.fixture
+def msg():
+    return object()
 
-if __name__ == '__main__':
-    unittest.main()
+
+def test_ping(bot, msg):
+    bot._handle_ping(msg)
+    assert bot._last_msg == 'pong'

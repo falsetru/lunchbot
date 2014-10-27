@@ -52,6 +52,7 @@ class Order(object):
             self.total
         )
 
+
 class LunchOrderBot(object):
     cmd_pattern = re.compile(ur'^!([a-z_\d]+)\b', flags=re.IGNORECASE)
     qty_pattern = re.compile(ur'^(?P<name>.*)\s*[x*]\s*(?P<qty>\d+)\s*$',
@@ -66,6 +67,9 @@ class LunchOrderBot(object):
         self.last_orderer = None
         self.seen = CappedSet(maxlen=1024)
         self.orders = collections.defaultdict(Order)
+        self.attach()
+
+    def attach(self):
         self.skype = Skype4Py.Skype(Events=self)
         self.skype.Attach()
 
@@ -214,7 +218,10 @@ class LunchOrderBot(object):
             self.send_text(msg, u'No order')
             return
         items = json.loads(o)
-        self.send_text(msg, self.orders[msg.FromHandle].populate(items).summary())
+        self.send_text(
+            msg,
+            self.orders[msg.FromHandle].populate(items).summary()
+        )
 
     def _handle_recent_orders(self, msg):
         def _():
