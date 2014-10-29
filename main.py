@@ -22,6 +22,9 @@ class Order(object):
     def __init__(self):
         self.clear()
 
+    def __eq__(self, other):
+        return self.menus == other.menus
+
     def add(self, name, price, qty=1):
         self.menus[name] += qty
         self.total += price * qty

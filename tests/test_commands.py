@@ -19,14 +19,19 @@ def cmd(request):
     return ret
 
 
-def gen_msg(msg, chatname='#current_channel'):
+def gen_msg(msg, **kwargs):
+    kwargs['FromHandle'] = kwargs.pop('FromHandle', 'a')
+    kwargs['ChatName'] = kwargs.pop('ChatName', '#current_channel')
     ret = mock.Mock()
-    ret.configure_mock(Body=msg, ChatName=chatname, FromHandle='a')
+    ret.configure_mock(
+        Body=msg,
+        **kwargs
+    )
     return ret
 
 
-def in_(cmd, msg_body):
-    msg = gen_msg(msg_body)
+def in_(cmd, msg_body, **kwargs):
+    msg = gen_msg(msg_body, **kwargs)
     cmd.handle_msg(msg)
     return msg
 

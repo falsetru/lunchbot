@@ -52,4 +52,12 @@ def test_order_multiple_menus(cmd, menus):
 
 def test_order_with_unknown_menu(cmd, menus):
     in_(cmd, u'개구리반찬')
+    assert not cmd.orders
     no_out(cmd)
+
+
+def test_metoo(cmd, menus):
+    in_(cmd, u'고기고기도시락')
+    in_(cmd, u'!metoo', FromHandle='b')
+    out(cmd, cmd.orders['b'].summary())
+    assert cmd.orders['b'] == cmd.orders['a']
