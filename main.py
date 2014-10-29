@@ -61,6 +61,9 @@ class Command(object):
     sep_pattern = re.compile(ur'[.,;+/]|\band\b',
                              flags=re.IGNORECASE | re.UNICODE)
 
+    def handle_msg(self, msg):
+        self.handle_order(msg) or self.handle_misc(msg)
+
     def handle_order(self, msg):
         any_order = False
         for item in self.sep_pattern.split(msg.Body):
@@ -74,18 +77,12 @@ class Command(object):
                 continue
             any_order = True
             name, price = name_price
-            o = self.orders[msg.Sender.Handle]
+            o = self.orders[msg.FromHandle]
             o.add(*name_price, qty=qty)
         if any_order:
             self.send_text(msg, o.summary())
             self.last_orderer = msg.FromHandle
         return any_order
-
-    def _handle_metoo(self, msg):
-        if self.last_orderer not in self.orders:
-            return
-        o = self.orders[msg.FromHandle] = self.orders[self.last_orderer].copy()
-        self.send_text(msg, o.summary())
 
     def handle_misc(self, msg):
         matched = self.cmd_pattern.match(msg.Body.strip())
@@ -95,6 +92,12 @@ class Command(object):
         attr = getattr(self, '_handle_{}'.format(cmd), None)
         if callable(attr):
             attr(msg)
+
+    def _handle_metoo(self, msg):
+        if self.last_orderer not in self.orders:
+            return
+        o = self.orders[msg.FromHandle] = self.orders[self.last_orderer].copy()
+        self.send_text(msg, o.summary())
 
     def _handle_hello(self, msg):
         self.send_text(
@@ -111,7 +114,7 @@ class Command(object):
         )
 
     def _handle_clear(self, msg):
-        self.orders.pop(msg.Sender.Handle, None)
+        self.orders.pop(msg.FromHandle, None)
         self.send_text(msg, u'{0.FullName} ({0.Handle}): OUT'.format(
             msg.Sender
         ))
@@ -209,7 +212,7 @@ class Command(object):
     def _handle_random(self, msg):
         name = menu.getrandombyprice()[0]
         name_price = menu.get(name.replace(u' ', u''))
-        o = self.orders[msg.Sender.Handle]
+        o = self.orders[msg.FromHandle]
         o.add(*name_price)
         self.send_text(msg, o.summary())
         self.last_orderer = msg.FromHandle
@@ -231,7 +234,7 @@ class LunchOrderBot(Command):
         if msg.ChatName not in self.channels:
             if msg.Body not in ('!summon', '!whereami'):
                 return
-        self.handle2fullname[msg.Sender.Handle] = msg.Sender.FullName
+        self.handle2fullname[msg.FromHandle] = msg.Sender.FullName
         if status in (Skype4Py.cmsReceived,
                       Skype4Py.cmsSent,
                       Skype4Py.cmsSending):
@@ -240,7 +243,7 @@ class LunchOrderBot(Command):
             elif msg.Id in self.seen:
                 return
 
-            self.handle_order(msg) or self.handle_misc(msg)
+            self.handle_msg(msg)
             self.seen.add(msg.Id)
 
     def send_text(self, msg, text):

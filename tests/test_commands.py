@@ -1,7 +1,11 @@
+# coding: utf-8
+
+import collections
+
 import mock
 import pytest
 
-from main import Command
+from main import Command, Order
 
 
 @pytest.fixture
@@ -11,23 +15,28 @@ def cmd(request):
     ret.subscribe = mock.Mock()
     ret.unsubscribe = mock.Mock()
     ret.channels = {'#interesting_channel'}
+    ret.orders = collections.defaultdict(Order)
     return ret
 
 
 def gen_msg(msg, chatname='#current_channel'):
     ret = mock.Mock()
-    ret.configure_mock(Body=msg, ChatName=chatname)
+    ret.configure_mock(Body=msg, ChatName=chatname, FromHandle='a')
     return ret
 
 
 def in_(cmd, msg_body):
     msg = gen_msg(msg_body)
-    cmd.handle_misc(msg)
+    cmd.handle_msg(msg)
     return msg
 
 
 def out(cmd, want):
     cmd.send_text.assert_called_with(mock.ANY, want)
+
+
+def no_out(cmd):
+    assert not cmd.send_text.called
 
 
 # ----------------------------------------------------------------------
