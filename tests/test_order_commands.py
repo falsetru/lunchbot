@@ -7,6 +7,9 @@ from .test_commands import cmd
 from .test_commands import in_, out, no_out
 
 
+assert callable(cmd)
+
+
 @pytest.fixture
 def menus(request):
     tbl = {

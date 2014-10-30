@@ -16,4 +16,3 @@ class CappedSet(set):
             self.discard(old)
         super(CappedSet, self).add(x)
         self.q.append(x)
-
