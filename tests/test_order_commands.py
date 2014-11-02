@@ -4,7 +4,7 @@ import mock
 import pytest
 
 from .test_commands import cmd
-from .test_commands import in_, out, no_out
+from .test_commands import in_, out, no_out, get_output
 
 
 assert callable(cmd)
@@ -79,3 +79,14 @@ def test_clearall(cmd, menus):
     in_(cmd, u'고기고기도시락', FromHandle='b')
     in_(cmd, u'!clearall')
     assert not cmd.orders
+
+
+def test_sum(cmd, menus):
+    in_(cmd, u'고기고기도시락')
+    in_(cmd, u'고기고기도시락', FromHandle='b')
+    in_(cmd, u'!sum')
+    got = get_output(cmd)
+    assert u'고기고기도시락 x 2' in got
+    assert u'a-fullname (a): 고기고기도시락 x 1 = 3,000' in got
+    assert u'b-fullname (b): 고기고기도시락 x 1 = 3,000' in got
+    assert u'Total: 6,000' in got

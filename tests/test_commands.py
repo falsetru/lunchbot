@@ -16,6 +16,7 @@ def cmd(request):
     ret.unsubscribe = mock.Mock()
     ret.channels = {'#interesting_channel'}
     ret.orders = collections.defaultdict(Order)
+    ret.handle2fullname = {'a': 'a-fullname', 'b': 'b-fullname'}
     return ret
 
 
@@ -42,6 +43,10 @@ def out(cmd, want):
 
 def no_out(cmd):
     assert not cmd.send_text.called
+
+
+def get_output(cmd):
+    return cmd.send_text.call_args[0][1]
 
 
 # ----------------------------------------------------------------------
