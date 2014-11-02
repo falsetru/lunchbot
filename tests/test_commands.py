@@ -70,3 +70,8 @@ def test_summon(cmd):
 def test_dismiss(cmd):
     in_(cmd, '!dismiss')
     cmd.unsubscribe.assert_called_with('#current_channel')
+
+
+def test_hello(cmd):
+    in_(cmd, '!hello')
+    out(cmd, mock.ANY)
