@@ -213,8 +213,7 @@ class Command(object):
         self.send_text(msg, txt or u'No order')
 
     def _handle_random(self, msg):
-        name = menu.getrandombyprice()[0]
-        name_price = menu.get(name.replace(u' ', u''))
+        name_price = menu.getrandombyprice()
         o = self.orders[msg.FromHandle]
         o.add(*name_price)
         self.send_text(msg, o.summary())
