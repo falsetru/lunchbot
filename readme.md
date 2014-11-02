@@ -19,5 +19,5 @@ COMMANDS
 * !salt : 최근에 내가 주문한 메뉴로 주문하기
 * !sum : 요청된 메뉴 조회
 * !summon : 봇 작동 시작
-* !whereami : 현재 체팅방 코드 확인
+* !whereami : 현재 채팅방 코드 확인
 * !random : 임의의 메뉴 선택
