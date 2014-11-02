@@ -64,3 +64,18 @@ def test_metoo(cmd, menus):
     in_(cmd, u'!metoo', FromHandle='b')
     out(cmd, cmd.orders['b'].summary())
     assert cmd.orders['b'] == cmd.orders['a']
+
+
+def test_clear(cmd, menus):
+    in_(cmd, u'고기고기도시락')
+    in_(cmd, u'고기고기도시락', FromHandle='b')
+    in_(cmd, u'!clear')
+    assert 'a' not in cmd.orders
+    assert cmd.orders['b'].menus == {u'고기고기도시락': 1}
+
+
+def test_clearall(cmd, menus):
+    in_(cmd, u'고기고기도시락')
+    in_(cmd, u'고기고기도시락', FromHandle='b')
+    in_(cmd, u'!clearall')
+    assert not cmd.orders
