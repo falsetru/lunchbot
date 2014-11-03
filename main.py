@@ -65,6 +65,7 @@ class Command(object):
                              flags=re.IGNORECASE | re.UNICODE)
 
     def handle_msg(self, msg):
+        self.names.add(msg.FromHandle, msg.Sender.FullName)
         self.handle_order(msg) or self.handle_misc(msg)
 
     def handle_order(self, msg):
@@ -236,7 +237,6 @@ class LunchOrderBot(Command):
         if msg.ChatName not in self.channels:
             if msg.Body not in ('!summon', '!whereami'):
                 return
-        self.names.add(msg.FromHandle, msg.Sender.FullName)
         if status in (Skype4Py.cmsReceived,
                       Skype4Py.cmsSent,
                       Skype4Py.cmsSending):
