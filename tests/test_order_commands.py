@@ -78,8 +78,20 @@ def test_order_with_unknown_menu(cmd, menus):
 def test_metoo(cmd, menus):
     in_(cmd, u'고기고기도시락')
     in_(cmd, u'!metoo', FromHandle='b')
-    out(cmd, cmd.orders['b'].summary())
+    got = get_output(cmd)
+    assert 'Same as a-fullname' in got
+    assert cmd.orders['b'].summary() in got
     assert cmd.orders['b'] == cmd.orders['a']
+
+
+def test_metoo_with_others_name(cmd, menus):
+    in_(cmd, u'해피박스', FromHandle=u'john', FullName=u'John Doe')
+    in_(cmd, u'고기고기도시락', FromHandle=u'sam', FullName=u'Sam Ham')
+    in_(cmd, u'!metoo john', FromHandle=u'b')
+    got = get_output(cmd)
+    assert 'Same as John Doe' in got
+    assert cmd.orders['b'].summary() in got
+    assert cmd.orders['b'] == cmd.orders['john']
 
 
 def test_clear(cmd, menus):

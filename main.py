@@ -98,10 +98,18 @@ class Command(object):
             attr(msg)
 
     def _handle_metoo(self, msg):
-        if self.last_orderer not in self.orders:
+        id_ = self.last_orderer
+        xs = msg.Body.split()
+        if len(xs) > 1:
+            candidate = self.names.find(xs[1])
+            if candidate:
+                id_ = candidate
+        if id_ not in self.orders:
             return
-        o = self.orders[msg.FromHandle] = self.orders[self.last_orderer].copy()
-        self.send_text(msg, o.summary())
+        o = self.orders[msg.FromHandle] = self.orders[id_].copy()
+        self.send_text(msg, u'Same as {}: {}'.format(
+            self.names[id_], o.summary())
+        )
 
     def _handle_hello(self, msg):
         self.send_text(
