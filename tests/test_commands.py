@@ -16,7 +16,7 @@ def cmd(request):
     ret.unsubscribe = mock.Mock()
     ret.channels = {'#interesting_channel'}
     ret.orders = collections.defaultdict(Order)
-    ret.handle2fullname = {'a': 'a-fullname', 'b': 'b-fullname'}
+    ret.names = {'a': 'a-fullname', 'b': 'b-fullname'}
     return ret
 
 

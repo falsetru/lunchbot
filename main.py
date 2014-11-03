@@ -9,7 +9,7 @@ import time
 
 import Skype4Py
 
-from data_structures import CappedSet
+from data_structures import CappedSet, IdNameMap
 from storage import menu, order_record
 try:
     import settings
@@ -140,7 +140,7 @@ class Command(object):
         text.append(u' Show me the money '.center(80, u'-'))
         for handle, o in self.orders.items():
             text.append(u'{} ({}): {}'.format(
-                self.handle2fullname[handle],
+                self.names[handle],
                 handle,
                 o.summary()
             ))
@@ -164,7 +164,7 @@ class Command(object):
         timestamp = time.time()
         for handle, o in self.orders.items():
             order_record.add(
-                handle, self.handle2fullname[handle], dict(o.menus),
+                handle, self.names[handle], dict(o.menus),
                 o.total, timestamp
             )
         self.send_text(msg, u'주문 들어갑니다.')
@@ -225,7 +225,7 @@ class LunchOrderBot(Command):
     def __init__(self, sqlite_path, channels):
         self.sqlite_path = sqlite_path
         self.channels = set(channels)
-        self.handle2fullname = {}
+        self.names = IdNameMap()
         self.last_orderer = None
         self.seen = CappedSet(maxlen=1024)
         self.orders = collections.defaultdict(Order)
@@ -236,7 +236,7 @@ class LunchOrderBot(Command):
         if msg.ChatName not in self.channels:
             if msg.Body not in ('!summon', '!whereami'):
                 return
-        self.handle2fullname[msg.FromHandle] = msg.Sender.FullName
+        self.names.add(msg.FromHandle, msg.Sender.FullName)
         if status in (Skype4Py.cmsReceived,
                       Skype4Py.cmsSent,
                       Skype4Py.cmsSending):
