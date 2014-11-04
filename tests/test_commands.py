@@ -5,7 +5,7 @@ import collections
 import mock
 import pytest
 
-from main import Command, Order
+from main import Command, Order, IdNameMap
 
 
 @pytest.fixture
@@ -16,12 +16,13 @@ def cmd(request):
     ret.unsubscribe = mock.Mock()
     ret.channels = {'#interesting_channel'}
     ret.orders = collections.defaultdict(Order)
-    ret.handle2fullname = {'a': 'a-fullname', 'b': 'b-fullname'}
+    ret.names = IdNameMap({'a': 'a-fullname', 'b': 'b-fullname'})
     return ret
 
 
 def gen_msg(msg, **kwargs):
     kwargs['FromHandle'] = kwargs.pop('FromHandle', 'a')
+    kwargs['Sender.FullName'] = kwargs.pop('FullName', 'a-fullname')
     kwargs['ChatName'] = kwargs.pop('ChatName', '#current_channel')
     ret = mock.Mock()
     ret.configure_mock(
@@ -75,3 +76,8 @@ def test_dismiss(cmd):
 def test_hello(cmd):
     in_(cmd, '!hello')
     out(cmd, mock.ANY)
+
+
+def test_remember_id_names(cmd):
+    in_(cmd, '!hello', FromHandle='someid', FullName='full name')
+    cmd.names['someid'] == 'full name'

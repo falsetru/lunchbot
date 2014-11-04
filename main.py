@@ -9,7 +9,7 @@ import time
 
 import Skype4Py
 
-from data_structures import CappedSet
+from data_structures import CappedSet, IdNameMap
 from storage import menu, order_record
 try:
     import settings
@@ -65,6 +65,7 @@ class Command(object):
                              flags=re.IGNORECASE | re.UNICODE)
 
     def handle_msg(self, msg):
+        self.names.add(msg.FromHandle, msg.Sender.FullName)
         self.handle_order(msg) or self.handle_misc(msg)
 
     def handle_order(self, msg):
@@ -97,10 +98,18 @@ class Command(object):
             attr(msg)
 
     def _handle_metoo(self, msg):
-        if self.last_orderer not in self.orders:
+        id_ = self.last_orderer
+        xs = msg.Body.split()
+        if len(xs) > 1:
+            candidate = self.names.find(xs[1])
+            if candidate:
+                id_ = candidate
+        if id_ not in self.orders:
             return
-        o = self.orders[msg.FromHandle] = self.orders[self.last_orderer].copy()
-        self.send_text(msg, o.summary())
+        o = self.orders[msg.FromHandle] = self.orders[id_].copy()
+        self.send_text(msg, u'Same as {}: {}'.format(
+            self.names[id_], o.summary())
+        )
 
     def _handle_hello(self, msg):
         self.send_text(
@@ -140,7 +149,7 @@ class Command(object):
         text.append(u' Show me the money '.center(80, u'-'))
         for handle, o in self.orders.items():
             text.append(u'{} ({}): {}'.format(
-                self.handle2fullname[handle],
+                self.names[handle],
                 handle,
                 o.summary()
             ))
@@ -164,7 +173,7 @@ class Command(object):
         timestamp = time.time()
         for handle, o in self.orders.items():
             order_record.add(
-                handle, self.handle2fullname[handle], dict(o.menus),
+                handle, self.names[handle], dict(o.menus),
                 o.total, timestamp
             )
         self.send_text(msg, u'주문 들어갑니다.')
@@ -225,7 +234,7 @@ class LunchOrderBot(Command):
     def __init__(self, sqlite_path, channels):
         self.sqlite_path = sqlite_path
         self.channels = set(channels)
-        self.handle2fullname = {}
+        self.names = IdNameMap()
         self.last_orderer = None
         self.seen = CappedSet(maxlen=1024)
         self.orders = collections.defaultdict(Order)
@@ -236,7 +245,6 @@ class LunchOrderBot(Command):
         if msg.ChatName not in self.channels:
             if msg.Body not in ('!summon', '!whereami'):
                 return
-        self.handle2fullname[msg.FromHandle] = msg.Sender.FullName
         if status in (Skype4Py.cmsReceived,
                       Skype4Py.cmsSent,
                       Skype4Py.cmsSending):

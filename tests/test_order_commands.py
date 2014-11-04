@@ -78,8 +78,20 @@ def test_order_with_unknown_menu(cmd, menus):
 def test_metoo(cmd, menus):
     in_(cmd, u'고기고기도시락')
     in_(cmd, u'!metoo', FromHandle='b')
-    out(cmd, cmd.orders['b'].summary())
+    got = get_output(cmd)
+    assert 'Same as a-fullname' in got
+    assert cmd.orders['b'].summary() in got
     assert cmd.orders['b'] == cmd.orders['a']
+
+
+def test_metoo_with_others_name(cmd, menus):
+    in_(cmd, u'해피박스', FromHandle=u'john', FullName=u'John Doe')
+    in_(cmd, u'고기고기도시락', FromHandle=u'sam', FullName=u'Sam Ham')
+    in_(cmd, u'!metoo john', FromHandle=u'b')
+    got = get_output(cmd)
+    assert 'Same as John Doe' in got
+    assert cmd.orders['b'].summary() in got
+    assert cmd.orders['b'] == cmd.orders['john']
 
 
 def test_clear(cmd, menus):
@@ -99,7 +111,7 @@ def test_clearall(cmd, menus):
 
 def test_sum(cmd, menus):
     in_(cmd, u'고기고기도시락')
-    in_(cmd, u'고기고기도시락', FromHandle='b')
+    in_(cmd, u'고기고기도시락', FromHandle='b', FullName='b-fullname')
     in_(cmd, u'!sum')
     got = get_output(cmd)
     assert u'고기고기도시락 x 2' in got
@@ -115,8 +127,8 @@ def test_fin(cmd, menus):
         in_(cmd, u'!fin')
         assert m.call_count == 2
         m.assert_has_calls([
-            mock.call('a', 'a-fullname', {u'고기고기도시락': 1}, 3000, mock.ANY),
-            mock.call('b', 'b-fullname', {u'고기고기도시락': 2}, 6000, mock.ANY)
+            mock.call('a', mock.ANY, {u'고기고기도시락': 1}, 3000, mock.ANY),
+            mock.call('b', mock.ANY, {u'고기고기도시락': 2}, 6000, mock.ANY)
         ])
 
 
