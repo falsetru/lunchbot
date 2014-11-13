@@ -120,6 +120,12 @@ def test_sum(cmd, menus):
     assert u'Total: 6,000' in got
 
 
+def test_fin_without_order(cmd, menus):
+    with mock.patch('storage.OrderRecord.add'):
+        in_(cmd, u'!fin')
+        out(cmd, u'No order')
+
+
 def test_fin(cmd, menus):
     with mock.patch('storage.OrderRecord.add') as m:
         in_(cmd, u'고기고기도시락')
@@ -130,6 +136,16 @@ def test_fin(cmd, menus):
             mock.call('a', mock.ANY, {u'고기고기도시락': 1}, 3000, mock.ANY),
             mock.call('b', mock.ANY, {u'고기고기도시락': 2}, 6000, mock.ANY)
         ])
+
+
+def test_fin_choose_deliverer(cmd, menus):
+    with mock.patch('storage.OrderRecord.add'):
+        in_(cmd, u'고기고기도시락')
+        in_(cmd, u'고기고기도시락 x 2', FromHandle='b', FullName='b-fullname')
+        in_(cmd, u'!fin')
+        got = get_output(cmd)
+        assert u'님 고고!' in got
+        assert u'a-fullname(a)' in got or u'b-fullname(b)' in got
 
 
 def test_salt(cmd, menus):

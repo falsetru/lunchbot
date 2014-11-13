@@ -4,6 +4,7 @@
 import collections
 import datetime
 import json
+import random
 import re
 import time
 
@@ -15,6 +16,7 @@ try:
     import settings
 except ImportError:
     settings = object()
+rand = random.SystemRandom()
 
 
 class Order(object):
@@ -170,13 +172,20 @@ class Command(object):
         )
 
     def _handle_fin(self, msg):
+        if not self.orders:
+            self.send_text(msg, u'No order')
+            return
         timestamp = time.time()
         for handle, o in self.orders.items():
             order_record.add(
                 handle, self.names[handle], dict(o.menus),
                 o.total, timestamp
             )
-        self.send_text(msg, u'주문 들어갑니다.')
+        deliverer = rand.choice(list(self.orders))
+        self.send_text(msg, u'{}({}) 님 고고!'.format(
+            self.names[deliverer],
+            deliverer
+        ))
 
     def _handle_ping(self, msg):
         self.send_text(msg, u'pong')
