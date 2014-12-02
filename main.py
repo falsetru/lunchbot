@@ -95,7 +95,7 @@ class Command(object):
         if not matched:
             return
         cmd = matched.group(1)
-        attr = getattr(self, '_handle_{}'.format(cmd), None)
+        attr = getattr(self, '_handle_{}'.format(cmd.lower()), None)
         if callable(attr):
             attr(msg)
 
