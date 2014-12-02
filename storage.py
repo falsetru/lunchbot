@@ -20,7 +20,8 @@ def setup_db(path):
         db.execute(u'''
         CREATE TABLE IF NOT EXISTS menu (
             name TEXT PRIMARY KEY,
-            price INT
+            price INT,
+            restaurant TEXT
         )''')
         db.execute(u'''
         CREATE TABLE IF NOT EXISTS order_record (
