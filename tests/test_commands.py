@@ -58,6 +58,11 @@ def test_ping(cmd):
     out(cmd, 'pong')
 
 
+def test_ignore_case_of_command(cmd):
+    in_(cmd, '!PING')
+    out(cmd, 'pong')
+
+
 def test_whereami(cmd):
     in_(cmd, '!whereami')
     out(cmd, '#current_channel')
