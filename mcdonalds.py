@@ -1,9 +1,13 @@
 # coding: utf-8
 
 import contextlib
+import re
 import urllib
 
 import lxml.html
+
+
+_symbols = re.compile(u'[®™]')
 
 
 def get_menus():
@@ -19,7 +23,10 @@ def parse_menus(html):
     for panel in root.cssselect('#product-cards .panel-product'):
         name, = panel.cssselect('.product-title')
         price, = panel.cssselect('.starting-price')
-        yield name.text, ''.join(c for c in price.text if c.isdigit())
+        yield (
+            _symbols.sub('', name.text),
+            ''.join(c for c in price.text if c.isdigit())
+        )
 
 
 if __name__ == '__main__':

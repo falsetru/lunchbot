@@ -9,7 +9,7 @@ def test_parse_menus():
     menus = list(mcdonalds.parse_menus(html))
     assert len(menus) == 19
     assert (u'디럭스 슈림프 버거', '4200') in menus
-    assert (u'맥스파이시™ 치킨텐더 - 4조각', '6000') in menus
+    assert (u'맥스파이시 치킨텐더 - 4조각', '6000') in menus
 
 
 @use_net_resource
