@@ -117,10 +117,12 @@ class Command(object):
         self.send_text(
             msg,
             u'점심봇 (experimental): '
-            u'한솥 도시락을 드실분은 알려주세요. '
+            u'한솥 도시락 / 햄버거 을 드실분은 알려주세요. '
             u'현민님이 주문 대행해 드립니다.\n'
-            u'http://www.hsd.co.kr/lunch/lunchList.html\n'
-            u'봇은 거들뿐... ' +
+            u'한솥 - http://www.hsd.co.kr/lunch/lunchList.html\n'
+            u'버거왕 - https://delivery.burgerking.co.kr/getMenuList\n'
+            u'MC도날드 - https://www.mcdelivery.co.kr/kr/browse'
+            u'/menu.html?daypartId=1&catId=11\n' +
             u', '.join('!{}'.format(
                 x.split('_', 2)[-1])
                 for x in dir(self) if x.startswith('_handle')
