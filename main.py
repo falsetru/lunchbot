@@ -113,16 +113,20 @@ class Command(object):
             self.names[id_], o.summary())
         )
 
+    menu_urls = (
+        u'한솥 - http://www.hsd.co.kr/lunch/lunchList.html\n'
+        u'버거왕 - https://delivery.burgerking.co.kr/getMenuList\n'
+        u'MC도날드 - https://www.mcdelivery.co.kr/kr/browse'
+        u'/menu.html?daypartId=1&catId=11'
+    )
+
     def _handle_hello(self, msg):
         self.send_text(
             msg,
             u'점심봇 (experimental): '
             u'한솥 도시락 / 햄버거 을 드실분은 알려주세요. '
-            u'현민님이 주문 대행해 드립니다.\n'
-            u'한솥 - http://www.hsd.co.kr/lunch/lunchList.html\n'
-            u'버거왕 - https://delivery.burgerking.co.kr/getMenuList\n'
-            u'MC도날드 - https://www.mcdelivery.co.kr/kr/browse'
-            u'/menu.html?daypartId=1&catId=11\n' +
+            u'현민님이 주문 대행해 드립니다.\n' +
+            self.menu_urls +
             u', '.join('!{}'.format(
                 x.split('_', 2)[-1])
                 for x in dir(self) if x.startswith('_handle')
@@ -184,13 +188,7 @@ class Command(object):
         return result
 
     def _handle_menu(self, msg):
-        self.send_text(
-            msg,
-            u'\n'.join(
-                u'{} - {:,}'.format(name, price)
-                for name, price in menu.getall()
-            )
-        )
+        self.send_text(msg, self.menu_urls)
 
     def _handle_fin(self, msg):
         if not self.orders:

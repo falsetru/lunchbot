@@ -192,8 +192,7 @@ def test_salt(cmd, menus):
 def test_menu(cmd, menus):
     in_(cmd, u'!menu')
     got = get_output(cmd)
-    assert u'고기고기도시락 - 3,000' in got
-    assert u'해피박스 - 1,000' in got
+    assert u'http://' in got
 
 
 def test_recent_orders(cmd, menus):
