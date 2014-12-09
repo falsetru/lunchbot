@@ -82,9 +82,9 @@ class Command(object):
             if not name_price:
                 continue
             any_order = True
-            name, price = name_price
+            name, price, restaurant = name_price
             o = self.orders[msg.FromHandle]
-            o.add(*name_price, qty=qty)
+            o.add(name, price, qty=qty)
         if any_order:
             self.send_text(msg, o.summary())
             self.last_orderer = msg.FromHandle
@@ -141,26 +141,45 @@ class Command(object):
         if not self.orders:
             self.send_text(msg, u'읭? No order at all.')
             return
+
         text = []
-        text.append(u' Menu '.center(80, u'-'))
+        for restaurant, orders in self.group_by_restaurant().items():
+            text += self._sum_for_a_restaurant(restaurant, orders)
+        self.send_text(msg, u'\n'.join(text))
+
+    def _sum_for_a_restaurant(self, restaurant, orders):
+        text = []
+        text.append(u' Menu - {} '.format(restaurant).center(80, u'-'))
         cnt = collections.Counter()
-        for o in self.orders.values():
+        for o in orders.values():
             cnt += o.menus
         for name, c in cnt.most_common():
             text.append(u'{} x {}'.format(name, c))
-        text.append(u' Show me the money '.center(80, u'-'))
-        for handle, o in self.orders.items():
+        text.append(u' Show me the money - {} '.center(80, u'-'))
+        for handle, o in orders.items():
             text.append(u'{} ({}): {}'.format(
                 self.names[handle],
                 handle,
                 o.summary()
             ))
         text.append(
-            u' Total: {:,} '.format(
-                sum(o.total for o in self.orders.values())
-            ).center(80, u'-')
+            u'Total: {:,}'.format(
+                sum(o.total for o in orders.values())
+            )
         )
-        self.send_text(msg, u'\n'.join(text))
+        return text
+
+    def group_by_restaurant(self):
+        result = collections.defaultdict(
+            lambda: collections.defaultdict(Order)
+        )
+        for handle, order in self.orders.items():
+            for name, qty in order.menus.items():
+                name, price, restaurant = menu.get(name)
+                result[restaurant][handle].add(
+                    name, int(price), qty
+                )
+        return result
 
     def _handle_menu(self, msg):
         self.send_text(

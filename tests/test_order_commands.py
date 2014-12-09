@@ -17,20 +17,22 @@ assert callable(cmd)
 @pytest.fixture
 def menus(request):
     tbl = {
-        u'고기고기도시락': 3000,
-        u'해피박스': 1000,
+        u'고기고기도시락': (3000, 'hsd'),
+        u'해피박스': (1000, 'hsd'),
+        u'빅맥': (2000, 'mcdonalds'),
     }
     mocks = {}
 
     def get(name):
-        price = tbl.get(name)
-        if not price:
+        x = tbl.get(name)
+        if not x:
             return
-        return name, price
+        price, restaurant = x
+        return name, price, restaurant
 
     def getall():
         for menu in sorted(tbl):
-            yield menu, tbl[menu]
+            yield menu, tbl[menu][0]
 
     patcher = mock.patch('storage.Menu.get', side_effect=get)
     mocks['get'] = patcher.start()
@@ -118,6 +120,27 @@ def test_sum(cmd, menus):
     assert u'a-fullname (a): 고기고기도시락 x 1 = 3,000' in got
     assert u'b-fullname (b): 고기고기도시락 x 1 = 3,000' in got
     assert u'Total: 6,000' in got
+
+
+def test_sum_group_by_restaurant(cmd, menus):
+    in_(cmd, u'고기고기도시락')
+    in_(cmd, u'빅맥', FromHandle='b', FullName='b-fullname')
+    order_dicts = cmd.group_by_restaurant()
+    assert isinstance(order_dicts, dict)
+    assert set(order_dicts) == {'hsd', 'mcdonalds'}
+    assert set(order_dicts['hsd']) == {'a'}
+    assert set(order_dicts['mcdonalds']) == {'b'}
+
+    in_(cmd, '!sum')
+    got = get_output(cmd)
+    assert u'고기고기도시락 x 1' in got
+    assert u'빅맥 x 1' in got
+    assert u'a-fullname (a): 고기고기도시락 x 1 = 3,000' in got
+    assert u'b-fullname (b): 빅맥 x 1 = 2,000' in got
+    assert u'Menu - hsd' in got
+    assert u'Menu - mcdonalds' in got
+    assert u'Total: 3,000' in got
+    assert u'Total: 2,000' in got
 
 
 def test_fin_without_order(cmd, menus):
