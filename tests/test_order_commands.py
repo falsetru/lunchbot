@@ -30,16 +30,8 @@ def menus(request):
         price, restaurant = x
         return name, price, restaurant
 
-    def getall():
-        for menu in sorted(tbl):
-            yield menu, tbl[menu][0]
-
     patcher = mock.patch('storage.Menu.get', side_effect=get)
     mocks['get'] = patcher.start()
-    request.addfinalizer(patcher.stop)
-
-    patcher = mock.patch('storage.Menu.getall', side_effect=getall)
-    mocks['getall'] = patcher.start()
     request.addfinalizer(patcher.stop)
 
     return mocks

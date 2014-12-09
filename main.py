@@ -65,6 +65,13 @@ class Command(object):
                              flags=re.IGNORECASE | re.UNICODE)
     sep_pattern = re.compile(ur'[.,;+/]|\band\b',
                              flags=re.IGNORECASE | re.UNICODE)
+    menu_urls = (
+        u'한솥 - http://www.hsd.co.kr/lunch/lunchList.html\n'
+        u'버거왕 - https://delivery.burgerking.co.kr/getMenuList\n'
+        u'MC도날드 - https://www.mcdelivery.co.kr/kr/browse'
+        u'/menu.html?daypartId=1&catId=11'
+    )
+
 
     def handle_msg(self, msg):
         self.names.add(msg.FromHandle, msg.Sender.FullName)
@@ -112,13 +119,6 @@ class Command(object):
         self.send_text(msg, u'Same as {}: {}'.format(
             self.names[id_], o.summary())
         )
-
-    menu_urls = (
-        u'한솥 - http://www.hsd.co.kr/lunch/lunchList.html\n'
-        u'버거왕 - https://delivery.burgerking.co.kr/getMenuList\n'
-        u'MC도날드 - https://www.mcdelivery.co.kr/kr/browse'
-        u'/menu.html?daypartId=1&catId=11'
-    )
 
     def _handle_hello(self, msg):
         self.send_text(
