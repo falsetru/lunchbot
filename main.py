@@ -133,6 +133,8 @@ class Command(object):
             )
         )
 
+    _handle_help = _handle_hello
+
     def _handle_clear(self, msg):
         self.orders.pop(msg.FromHandle, None)
         self.send_text(msg, u'{0.FullName} ({0.Handle}): OUT'.format(
