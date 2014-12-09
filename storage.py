@@ -2,8 +2,10 @@
 # coding: utf-8
 
 import contextlib
+import importlib
 import json
 import sqlite3
+import sys
 
 
 @contextlib.contextmanager
@@ -45,23 +47,37 @@ class Connect(object):
 
 class Menu(Connect):
 
-    def populate(self, menus):
+    def populate(self, restaurant, menus):
         with self.connect() as db:
-            db.execute(u'DELETE FROM menu')
-            db.executemany(
-                u'INSERT INTO menu(name, price) VALUES(?, ?)',
-                [(name.replace(' ', ''), price) for name, price in menus])
+            db.execute(
+                u'DELETE FROM menu WHERE restaurant = ?',
+                [restaurant])
+            for name, price in menus:
+                ok = True
+                try:
+                    db.execute(
+                        u'INSERT INTO menu(name, price, restaurant) '
+                        u'VALUES(?, ?, ?)',
+                        (name.replace(' ', ''), price, restaurant))
+                except sqlite3.Error as e:
+                    ok = False
+                print name, price
+                if not ok:
+                    print '!!!!', e
             db.commit()
             db.close()
 
     def get(self, name):
         with self.connect() as db:
             rows = list(db.execute(
-                u'SELECT name, price FROM menu WHERE name = ?', [name]))
+                u'''SELECT name, price, restaurant
+                FROM menu WHERE name = ?''',
+                [name]))
             if len(rows) == 1:
                 return rows[0]
             rows = list(db.execute(
-                u'SELECT name, price FROM menu WHERE name LIKE ?',
+                u'''SELECT name, price, restaurant
+                FROM menu WHERE name LIKE ?''',
                 [u'%{}%'.format(name)]))
             if len(rows) == 1:
                 return rows[0]
@@ -122,6 +138,10 @@ menu = Menu(db)
 order_record = OrderRecord(db)
 
 if __name__ == '__main__':
-    import importlib
-    hsd = importlib.import_module('hsd')
-    menu.populate(hsd.get_menus())
+    if len(sys.argv) > 1:
+        module_names = sys.argv[1:]
+    else:
+        module_names = ['hsd', 'mcdonalds', 'burgerking']
+    for module_name in module_names:
+        mod = importlib.import_module(module_name)
+        menu.populate(module_name, mod.get_menus())
