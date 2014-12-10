@@ -65,6 +65,13 @@ class Command(object):
                              flags=re.IGNORECASE | re.UNICODE)
     sep_pattern = re.compile(ur'[.,;+/]|\band\b',
                              flags=re.IGNORECASE | re.UNICODE)
+    menu_urls = (
+        u'한솥 - http://www.hsd.co.kr/lunch/lunchList.html\n'
+        u'버거왕 - https://delivery.burgerking.co.kr/menu/all\n'
+        u'MC도날드 - https://www.mcdelivery.co.kr/kr/browse'
+        u'/menu.html?daypartId=1&catId=11'
+    )
+
 
     def handle_msg(self, msg):
         self.names.add(msg.FromHandle, msg.Sender.FullName)
@@ -82,9 +89,9 @@ class Command(object):
             if not name_price:
                 continue
             any_order = True
-            name, price = name_price
+            name, price, restaurant = name_price
             o = self.orders[msg.FromHandle]
-            o.add(*name_price, qty=qty)
+            o.add(name, price, qty=qty)
         if any_order:
             self.send_text(msg, o.summary())
             self.last_orderer = msg.FromHandle
@@ -117,15 +124,16 @@ class Command(object):
         self.send_text(
             msg,
             u'점심봇 (experimental): '
-            u'한솥 도시락을 드실분은 알려주세요. '
-            u'현민님이 주문 대행해 드립니다.\n'
-            u'http://www.hsd.co.kr/lunch/lunchList.html\n'
-            u'봇은 거들뿐... ' +
+            u'한솥 도시락 / 햄버거 을 드실분은 알려주세요. '
+            u'현민님이 주문 대행해 드립니다.\n' +
+            self.menu_urls +
             u', '.join('!{}'.format(
                 x.split('_', 2)[-1])
                 for x in dir(self) if x.startswith('_handle')
             )
         )
+
+    _handle_help = _handle_hello
 
     def _handle_clear(self, msg):
         self.orders.pop(msg.FromHandle, None)
@@ -141,35 +149,48 @@ class Command(object):
         if not self.orders:
             self.send_text(msg, u'읭? No order at all.')
             return
+
         text = []
-        text.append(u' Menu '.center(80, u'-'))
+        for restaurant, orders in self.group_by_restaurant().items():
+            text += self._sum_for_a_restaurant(restaurant, orders)
+        self.send_text(msg, u'\n'.join(text))
+
+    def _sum_for_a_restaurant(self, restaurant, orders):
+        text = []
+        text.append(u' Menu - {} '.format(restaurant).center(80, u'-'))
         cnt = collections.Counter()
-        for o in self.orders.values():
+        for o in orders.values():
             cnt += o.menus
         for name, c in cnt.most_common():
             text.append(u'{} x {}'.format(name, c))
-        text.append(u' Show me the money '.center(80, u'-'))
-        for handle, o in self.orders.items():
+        text.append(u' Show me the money - {} '.center(80, u'-'))
+        for handle, o in orders.items():
             text.append(u'{} ({}): {}'.format(
                 self.names[handle],
                 handle,
                 o.summary()
             ))
         text.append(
-            u' Total: {:,} '.format(
-                sum(o.total for o in self.orders.values())
-            ).center(80, u'-')
-        )
-        self.send_text(msg, u'\n'.join(text))
-
-    def _handle_menu(self, msg):
-        self.send_text(
-            msg,
-            u'\n'.join(
-                u'{} - {:,}'.format(name, price)
-                for name, price in menu.getall()
+            u'Total: {:,}'.format(
+                sum(o.total for o in orders.values())
             )
         )
+        return text
+
+    def group_by_restaurant(self):
+        result = collections.defaultdict(
+            lambda: collections.defaultdict(Order)
+        )
+        for handle, order in self.orders.items():
+            for name, qty in order.menus.items():
+                name, price, restaurant = menu.get(name)
+                result[restaurant][handle].add(
+                    name, int(price), qty
+                )
+        return result
+
+    def _handle_menu(self, msg):
+        self.send_text(msg, self.menu_urls)
 
     def _handle_fin(self, msg):
         if not self.orders:
