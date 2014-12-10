@@ -163,7 +163,7 @@ class Command(object):
             cnt += o.menus
         for name, c in cnt.most_common():
             text.append(u'{} x {}'.format(name, c))
-        text.append(u' Show me the money - {} '.center(80, u'-'))
+        text.append(u' Show me the money '.center(80, u'-'))
         for handle, o in orders.items():
             text.append(u'{} ({}): {}'.format(
                 self.names[handle],

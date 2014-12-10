@@ -108,6 +108,7 @@ def test_sum(cmd, menus):
     in_(cmd, u'고기고기도시락', FromHandle='b', FullName='b-fullname')
     in_(cmd, u'!sum')
     got = get_output(cmd)
+    assert u'--- Show me the money ---' in got
     assert u'고기고기도시락 x 2' in got
     assert u'a-fullname (a): 고기고기도시락 x 1 = 3,000' in got
     assert u'b-fullname (b): 고기고기도시락 x 1 = 3,000' in got
