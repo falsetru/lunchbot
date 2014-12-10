@@ -47,6 +47,13 @@ def test_an_order(cmd, menus):
     assert cmd.orders['a'].menus == {u'고기고기도시락': 1}
 
 
+def test_an_order_with_redundant_characters(cmd, menus):
+    in_(cmd, u'빅맥®')
+    assert cmd.orders['a'].menus == {u'빅맥': 1}
+    in_(cmd, u'빅맥™')
+    assert cmd.orders['a'].menus == {u'빅맥': 2}
+
+
 def test_order_accumulation(cmd, menus):
     in_(cmd, u'고기고기도시락')
     in_(cmd, u'고기고기도시락')
@@ -108,6 +115,7 @@ def test_sum(cmd, menus):
     in_(cmd, u'고기고기도시락', FromHandle='b', FullName='b-fullname')
     in_(cmd, u'!sum')
     got = get_output(cmd)
+    assert u'--- Show me the money ---' in got
     assert u'고기고기도시락 x 2' in got
     assert u'a-fullname (a): 고기고기도시락 x 1 = 3,000' in got
     assert u'b-fullname (b): 고기고기도시락 x 1 = 3,000' in got

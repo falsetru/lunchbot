@@ -65,11 +65,12 @@ class Command(object):
                              flags=re.IGNORECASE | re.UNICODE)
     sep_pattern = re.compile(ur'[.,;+/]|\band\b',
                              flags=re.IGNORECASE | re.UNICODE)
+    redundant_chars = re.compile(ur'[ ®™]')
     menu_urls = (
         u'한솥 - http://www.hsd.co.kr/lunch/lunchList.html\n'
         u'버거왕 - https://delivery.burgerking.co.kr/menu/all\n'
         u'MC도날드 - https://www.mcdelivery.co.kr/kr/browse'
-        u'/menu.html?daypartId=1&catId=11'
+        u'/menu.html?daypartId=1&catId=11\n'
     )
 
 
@@ -85,7 +86,8 @@ class Command(object):
                 name, qty = matched.group('name'), int(matched.group('qty'))
             else:
                 name, qty = item, 1
-            name_price = menu.get(name.replace(u' ', u''))
+            name = self.redundant_chars.sub(u'', name)
+            name_price = menu.get(name)
             if not name_price:
                 continue
             any_order = True
@@ -163,7 +165,7 @@ class Command(object):
             cnt += o.menus
         for name, c in cnt.most_common():
             text.append(u'{} x {}'.format(name, c))
-        text.append(u' Show me the money - {} '.center(80, u'-'))
+        text.append(u' Show me the money '.center(80, u'-'))
         for handle, o in orders.items():
             text.append(u'{} ({}): {}'.format(
                 self.names[handle],
