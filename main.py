@@ -69,7 +69,7 @@ class Command(object):
         u'한솥 - http://www.hsd.co.kr/lunch/lunchList.html\n'
         u'버거왕 - https://delivery.burgerking.co.kr/menu/all\n'
         u'MC도날드 - https://www.mcdelivery.co.kr/kr/browse'
-        u'/menu.html?daypartId=1&catId=11'
+        u'/menu.html?daypartId=1&catId=11\n'
     )
 
 
