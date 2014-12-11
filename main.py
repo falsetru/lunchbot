@@ -73,7 +73,6 @@ class Command(object):
         u'/menu.html?daypartId=1&catId=11\n'
     )
 
-
     def handle_msg(self, msg):
         self.names.add(msg.FromHandle, msg.Sender.FullName)
         self.handle_order(msg) or self.handle_misc(msg)
@@ -204,11 +203,19 @@ class Command(object):
                 handle, self.names[handle], dict(o.menus),
                 o.total, timestamp
             )
-        deliverer = rand.choice(list(self.orders))
-        self.send_text(msg, u'{}({}) 님 고고!'.format(
-            self.names[deliverer],
-            deliverer
-        ))
+
+        handles = set()
+        for handle, order in self.orders.items():
+            for m in order.menus:
+                _, _, restaurant = menu.get(m)
+                if restaurant == 'hsd':
+                    handles.add(handle)
+        if handles:
+            deliverer = rand.choice(list(handles))
+            self.send_text(msg, u'{}({}) 님 고고!'.format(
+                self.names[deliverer],
+                deliverer
+            ))
 
     def _handle_ping(self, msg):
         self.send_text(msg, u'pong')
