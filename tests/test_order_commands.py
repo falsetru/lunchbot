@@ -171,6 +171,23 @@ def test_fin_choose_deliverer(cmd, menus):
         assert u'a-fullname(a)' in got or u'b-fullname(b)' in got
 
 
+@mock.patch('storage.OrderRecord.add')
+def test_fin_deliverer_should_be_one_of_hsd_orderers(add, cmd, menus):
+    in_(cmd, u'고기고기도시락')
+    in_(cmd, u'빅맥', FromHandle='b', FullName='b-fullname')
+    for i in range(10):
+        in_(cmd, u'!fin')
+        got = get_output(cmd)
+        assert u'님 고고!' in got
+        assert u'a-fullname(a)' in got
+
+    cmd.orders.clear()
+    in_(cmd, u'빅맥')
+    in_(cmd, u'!fin')
+    got = get_output(cmd)
+    assert u'님 고고!' not in got
+
+
 def test_salt(cmd, menus):
     def get_last_order(handle, idx):
         if idx == 0:
