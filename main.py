@@ -125,7 +125,7 @@ class Command(object):
         self.send_text(
             msg,
             u'점심봇 (experimental): '
-            u'한솥 도시락 / 햄버거 을 드실분은 알려주세요. '
+            u'한솥 도시락 / 햄버거 를 드실분은 알려주세요. '
             u'현민님이 주문 대행해 드립니다.\n' +
             self.menu_urls +
             u', '.join('!{}'.format(
