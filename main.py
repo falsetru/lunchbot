@@ -193,6 +193,13 @@ class Command(object):
     def _handle_menu(self, msg):
         self.send_text(msg, self.menu_urls)
 
+    def _handle_hello_coffeebot(self, msg):
+        txt = u'\n'.join(
+            u'{} - {}'.format(name, price) for name, price in
+            menu.getall(restaurant='coffee')
+        )
+        self.send_text(msg, txt)
+
     def _handle_fin(self, msg):
         if not self.orders:
             self.send_text(msg, u'No order')
