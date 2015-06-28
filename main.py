@@ -267,6 +267,27 @@ class Command(object):
         self.send_text(msg, o.summary())
         self.last_orderer = msg.FromHandle
 
+    def _handle_pick(self, msg):
+        try:
+            n = int(msg.Body.split()[1])
+            if n <= 0:
+                raise ValueError()
+        except (IndexError, ValueError):
+            n = 1
+        try:
+            people = [
+                u'{} ({})'.format(p.FullName, p.Handle)
+                for p in msg.Chat.Members
+            ]
+            people = rand.sample(people, n)
+        except ValueError as e:
+            self.send_text(msg, str(e))
+        else:
+            self.send_text(
+                msg,
+                u'\n'.join(people)
+            )
+
 
 class LunchOrderBot(Command):
 
