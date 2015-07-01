@@ -67,7 +67,7 @@ class Command(object):
                              flags=re.IGNORECASE | re.UNICODE)
     redundant_chars = re.compile(ur'[ ®™]')
     menu_urls = (
-        u'한솥 - http://www.hsd.co.kr/lunch/lunchList.html\n'
+        u'한솥 (02-3453-0608) - http://www.hsd.co.kr/lunch/lunchList.html\n'
         u'버거왕 - https://delivery.burgerking.co.kr/menu/all\n'
         u'MC도날드 - https://www.mcdelivery.co.kr/kr/browse'
         u'/menu.html?daypartId=1&catId=11\n'
@@ -125,8 +125,7 @@ class Command(object):
         self.send_text(
             msg,
             u'점심봇 (experimental): '
-            u'한솥 도시락 / 햄버거 을 드실분은 알려주세요. '
-            u'현민님이 주문 대행해 드립니다.\n' +
+            u'한솥 도시락 / 햄버거 을 드실분은 알려주세요.\n' +
             self.menu_urls +
             u', '.join('!{}'.format(
                 x.split('_', 2)[-1])
