@@ -67,7 +67,7 @@ class Command(object):
                              flags=re.IGNORECASE | re.UNICODE)
     redundant_chars = re.compile(ur'[ ®™]')
     menu_urls = (
-        u'한솥 - http://www.hsd.co.kr/lunch/lunchList.html\n'
+        u'한솥 (02-3453-0608) - http://www.hsd.co.kr/lunch/lunchList.html\n'
         u'버거왕 - https://delivery.burgerking.co.kr/menu/all\n'
         u'MC도날드 - https://www.mcdelivery.co.kr/kr/browse'
         u'/menu.html?daypartId=1&catId=11\n'
@@ -125,8 +125,7 @@ class Command(object):
         self.send_text(
             msg,
             u'점심봇 (experimental): '
-            u'한솥 도시락 / 햄버거 을 드실분은 알려주세요. '
-            u'현민님이 주문 대행해 드립니다.\n' +
+            u'한솥 도시락 / 햄버거 을 드실분은 알려주세요.\n' +
             self.menu_urls +
             u', '.join('!{}'.format(
                 x.split('_', 2)[-1])
@@ -192,6 +191,13 @@ class Command(object):
 
     def _handle_menu(self, msg):
         self.send_text(msg, self.menu_urls)
+
+    def _handle_hello_coffeebot(self, msg):
+        txt = u'\n'.join(
+            u'{} - {}'.format(name, price) for name, price in
+            menu.getall(restaurant='coffee')
+        )
+        self.send_text(msg, txt)
 
     def _handle_fin(self, msg):
         if not self.orders:
@@ -266,6 +272,27 @@ class Command(object):
         o.add(*name_price)
         self.send_text(msg, o.summary())
         self.last_orderer = msg.FromHandle
+
+    def _handle_pick(self, msg):
+        try:
+            n = int(msg.Body.split()[1])
+            if n <= 0:
+                raise ValueError()
+        except (IndexError, ValueError):
+            n = 1
+        try:
+            people = [
+                u'{} ({})'.format(p.FullName, p.Handle)
+                for p in msg.Chat.Members
+            ]
+            people = rand.sample(people, n)
+        except ValueError as e:
+            self.send_text(msg, str(e))
+        else:
+            self.send_text(
+                msg,
+                u'\n'.join(people)
+            )
 
 
 class LunchOrderBot(Command):

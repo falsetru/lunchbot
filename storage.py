@@ -82,11 +82,19 @@ class Menu(Connect):
             if len(rows) == 1:
                 return rows[0]
 
-    def getall(self):
+    def getall(self, restaurant=None):
         with self.connect() as db:
-            return list(db.execute(
-                u'SELECT name, price FROM menu ORDER BY price DESC'
-            ))
+            if restaurant:
+                where = 'WHERE restaurant = ?'
+                args = (restaurant,)
+            else:
+                where = ''
+                args = ()
+            sql = (
+                u'SELECT name, price FROM menu {} ORDER BY price DESC'
+                .format(where)
+            )
+            return list(db.execute(sql, args))
 
     def getrandombyprice(self, min=1000, max=5000):
         with self.connect() as db:
